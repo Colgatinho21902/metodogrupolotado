@@ -1,0 +1,7 @@
+.git
+.openai
+referencia
+evidence
+__pycache__
+*.zip
+*.tar.gz

@@ -1,0 +1,44 @@
+[
+  {
+    "file": "prova01",
+    "originalBytes": 225733,
+    "webp960Bytes": 144892,
+    "webp480Bytes": 59360
+  },
+  {
+    "file": "prova-02-vendas",
+    "originalBytes": 204171,
+    "webp960Bytes": 87922,
+    "webp480Bytes": 40252
+  },
+  {
+    "file": "prova-03-depoimento",
+    "originalBytes": 248958,
+    "webp960Bytes": 112616,
+    "webp480Bytes": 54136
+  },
+  {
+    "file": "prova-04-promocoes",
+    "originalBytes": 267700,
+    "webp960Bytes": 139540,
+    "webp480Bytes": 63374
+  },
+  {
+    "file": "prova-05-custo-lead",
+    "originalBytes": 254927,
+    "webp960Bytes": 79530,
+    "webp480Bytes": 37662
+  },
+  {
+    "file": "prova-06-mentoria",
+    "originalBytes": 315026,
+    "webp960Bytes": 147240,
+    "webp480Bytes": 71104
+  },
+  {
+    "file": "prova-07-entradas",
+    "originalBytes": 329520,
+    "webp960Bytes": 140572,
+    "webp480Bytes": 65280
+  }
+]

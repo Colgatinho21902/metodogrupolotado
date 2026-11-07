@@ -1,0 +1,2 @@
+@media(max-width:639px){button.rounded-full{min-inline-size:44px;min-block-size:44px}a[id^="cta-"]{touch-action:manipulation}summary{touch-action:manipulation}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
