@@ -94,6 +94,8 @@ old='src:e.src,alt:e.alt,loading:`lazy`'
 new='src:e.src,srcSet:`${e.src.replace(`.webp`,`-480.webp`)} 480w, ${e.src} 960w`,sizes:`(max-width: 639px) calc(100vw - 40px), 960px`,alt:e.alt,loading:`lazy`'
 assert route.count(old)==1
 route=route.replace(old,new)
+from patch_video import apply_video_recovery
+route=apply_video_recovery(route)
 jsfiles[1].write_text(route,encoding='utf-8')
 
 html=re.sub(r'<script\b[^>]*src="(?:/~flock\.js|/__l5e/events\.[^"]+)"[^>]*>.*?</script>','',html,flags=re.S)
