@@ -3,3 +3,6 @@ evidence/
 *.zip
 *.tar.gz
 __pycache__/
+.env
+.env.*
+.vercel/

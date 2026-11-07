@@ -1,6 +1,6 @@
 {
   "checkoutUrl": "https://pay.kiwify.com.br/povy39E?afid=Z4HTVvAl",
   "sourceUrl": "https://escoladeafiliados.online/",
-  "metaPixelId": null,
-  "note": "Pixel do afiliado ainda não informado. A cópia não envia eventos ao Pixel original do produtor."
+  "metaPixelId": "1794863211794229",
+  "note": "Pixel do afiliado configurado. API de Conversões depende de META_ACCESS_TOKEN na Vercel Production. Consulte META.md."
 }

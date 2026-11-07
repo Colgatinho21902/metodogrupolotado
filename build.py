@@ -111,6 +111,9 @@ html=re.sub(r'<img\b[^>]*>',responsive_img,html)
 (DIST/'assets/mobile.css').write_text('@media(max-width:639px){button.rounded-full{min-inline-size:44px;min-block-size:44px}a[id^="cta-"]{touch-action:manipulation}summary{touch-action:manipulation}}\n@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}\n',encoding='utf-8')
 style=DIST/'assets/styles-BoGvWR9h.css'
 style.write_text(style.read_text(encoding='utf-8')+'\n'+(DIST/'assets/mobile.css').read_text(encoding='utf-8'),encoding='utf-8')
+from patch_tracking import apply_tracking
+html,main=apply_tracking(html,jsfiles[0].read_text(encoding='utf-8'))
+jsfiles[0].write_text(main,encoding='utf-8')
 (DIST/'index.html').write_text(html,encoding='utf-8')
 (ROOT/'asset-report.json').write_text(json.dumps(image_stats,indent=2),encoding='utf-8')
 print(json.dumps({'checkout':CHECKOUT,'images':len(image_stats),'beforeBytes':sum(i['originalBytes'] for i in image_stats),'webp960Bytes':sum(i['webp960Bytes'] for i in image_stats),'webp480Bytes':sum(i['webp480Bytes'] for i in image_stats),'htmlBytes':len(html.encode()),'files':len(list(DIST.rglob('*')))},ensure_ascii=True))

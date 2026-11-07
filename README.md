@@ -21,13 +21,13 @@ O teste de clique confirmou que o parâmetro `afid` é preservado quando o compo
 
 ## Medição
 
-O Pixel do produtor `1854019762707116` e os scripts do provedor original não foram instalados nesta cópia. O Pixel próprio do afiliado ainda não foi informado. `metaPixelId` em `config.json` está vazio e é apenas uma pendência documentada; editar esse campo sozinho não instala um Pixel.
+Pixel do afiliado **1794863211794229** configurado com PageView, ViewContent e InitiateCheckout, sem registrar cliques como compras. O envio pela API de Conversões depende de `META_ACCESS_TOKEN` no ambiente Production da Vercel. Veja [META.md](META.md) para configuração, privacidade, deduplicação e limitações. O Pixel do produtor permanece removido.
 
 Esta entrega não promete aprovação de anúncio, percentual de conversão, nota no PageSpeed nem resultado financeiro. Não foi executado Lighthouse ou teste em hardware físico nesta etapa. Os tamanhos de celular foram emulados no navegador e as evidências estão em `evidence/` no pacote.
 
 ## Arquivos
 
-- `dist/`: site estático pronto para servir por HTTP/HTTPS; não exige Node no servidor.
+- `dist/`: frontend estático pronto para servir por HTTP/HTTPS. A medição pelo servidor usa a função Node `api/meta.js` na Vercel.
 - `config.json`: link do afiliado e parâmetros documentados.
 - `build.py`: captura e preparação reproduzível do frontend publicado.
 - `verify.py`: verifica preservação dos textos, links, recursos, sintaxe e imagens.

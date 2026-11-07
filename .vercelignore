@@ -5,3 +5,6 @@ evidence
 __pycache__
 *.zip
 *.tar.gz
+.env
+.env.*
+.vercel
