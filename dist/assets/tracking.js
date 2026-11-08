@@ -10,7 +10,7 @@
   var query = new URLSearchParams(location.search), changed = false;
   keys.forEach(function (key) { if (query.has(key)) { campaign[key] = query.get(key); changed = true; } });
   if (changed) try { sessionStorage.setItem('eda_campaign', JSON.stringify(campaign)); } catch (_) {}
-  function permitted() { return choice === 'accepted' && navigator.doNotTrack !== '1' && navigator.globalPrivacyControl !== true; }
+  function permitted() { return choice !== 'denied' && navigator.doNotTrack !== '1' && navigator.globalPrivacyControl !== true; }
   function cookie(name) { var m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)')); return m ? decodeURIComponent(m[1]) : ''; }
   function saveCookie(name, value) { document.cookie = name + '=' + encodeURIComponent(value) + '; Max-Age=7776000; Path=/; Secure; SameSite=Lax'; }
   function checkoutUrl() {
@@ -28,13 +28,13 @@
       fetch('/api/meta', { method: 'POST', credentials: 'same-origin', keepalive: true,
         headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
           event_name: name, event_id: eventId, event_time: Math.floor(Date.now()/1000),
-          event_source_url: location.origin + location.pathname, fbp: cookie('_fbp'), fbc: cookie('_fbc'), consent: true
+          event_source_url: location.origin + location.pathname, fbp: cookie('_fbp'), fbc: cookie('_fbc'), measurement_allowed: true
         }) }).then(function (r) { if (!r.ok) console.warn('Medição pelo servidor indisponível:', r.status); }).catch(function () {});
     } catch (_) {}
   }
   function initialize() {
     if (!permitted() || location.pathname !== '/') return Promise.resolve(false);
-    if (initialized) { if (window.fbq) window.fbq('consent', 'grant'); return Promise.resolve(true); }
+    if (initialized) { if (choice === 'accepted' && window.fbq) window.fbq('consent', 'grant'); return Promise.resolve(true); }
     if (initializing) return initializing;
     initializing = fetch('/api/meta', { credentials: 'same-origin', cache: 'no-store' }).then(function (r) {
       if (!r.ok) throw new Error('configuration unavailable'); return r.json();
@@ -48,7 +48,8 @@
         script.src = 'https://connect.facebook.net/en_US/fbevents.js'; document.head.appendChild(script);
       }
       window.fbq('set', 'autoConfig', false, PIXEL);
-      window.fbq('consent', 'grant'); window.fbq('init', PIXEL);
+      if (choice === 'accepted') window.fbq('consent', 'grant');
+      window.fbq('init', PIXEL);
       initialized = true;
       if (!cookie('_fbp')) saveCookie('_fbp', 'fb.1.' + Date.now() + '.' + Math.floor(Math.random()*1e12));
       var clickId = campaign.fbclid;
@@ -99,11 +100,10 @@
     if (document.getElementById('eda-cookie-dialog')) return;
     var dialog = document.createElement('dialog'); dialog.id = 'eda-cookie-dialog';
     dialog.setAttribute('aria-labelledby','eda-cookie-title');
-    dialog.innerHTML = '<h2 id="eda-cookie-title">Sua privacidade</h2><p>Com sua autorização, usamos o Pixel da Meta e medição pelo servidor para medir visitas, interesse e cliques de compra e melhorar anúncios. A compra funciona sem esses cookies.</p><p><a href="/privacidade.html">Política de Privacidade</a></p><div class="eda-cookie-actions"><button type="button" data-choice="denied">Recusar opcionais</button><button type="button" data-choice="accepted">Aceitar medição</button></div>';
+    dialog.innerHTML = '<h2 id="eda-cookie-title">Sua privacidade</h2><p>A medição pelo Pixel da Meta e pelo servidor inicia automaticamente para medir visitas, interesse e cliques de compra e melhorar anúncios. Você pode desativá-la aqui. A compra funciona com a medição desativada.</p><p><a href="/privacidade.html">Política de Privacidade</a></p><div class="eda-cookie-actions"><button type="button" data-choice="denied">Desativar medição</button><button type="button" data-choice="accepted">Ativar medição</button></div>';
     dialog.querySelectorAll('[data-choice]').forEach(function (button) { button.addEventListener('click', function () { setChoice(button.dataset.choice); }); });
-    dialog.addEventListener('cancel', function (event) { event.preventDefault(); setChoice('denied'); });
+    // Closing preferences without choosing preserves the current setting.
     document.body.appendChild(dialog);
-    if (!choice && navigator.doNotTrack !== '1' && navigator.globalPrivacyControl !== true) dialog.showModal();
   }
   function open() { mount(); document.getElementById('eda-cookie-dialog').showModal(); }
   window.edaMeta = { track: track };

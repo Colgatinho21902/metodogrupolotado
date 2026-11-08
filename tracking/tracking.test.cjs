@@ -12,11 +12,11 @@ function harness(options={}) {
  const local=new Map(options.choice ? [['eda_meta_consent',options.choice]] : []);
  const session=new Map(options.saved ? [['eda_campaign',JSON.stringify(options.saved)]] : []);
  const storage = map => ({getItem:k=>{if(options.blockStorage)throw Error('blocked');return map.get(k)||null},setItem:(k,v)=>{if(options.blockStorage)throw Error('blocked');map.set(k,v)}});
- const document={head:{appendChild:s=>scripts.push(s)},createElement:()=>({}),querySelectorAll:()=>[],getElementById:()=>null,addEventListener:(n,f)=>listeners[n]=f};
+ const dialogs=new Map();let shown=0;const document={body:{appendChild:d=>dialogs.set(d.id,d)},head:{appendChild:s=>scripts.push(s)},createElement:tag=>tag==='dialog'?{setAttribute(){},querySelectorAll:()=>[],showModal(){shown++},close(){}}:{},querySelectorAll:()=>[],getElementById:id=>dialogs.get(id)||null,addEventListener:(n,f)=>listeners[n]=f};
  Object.defineProperty(document,'cookie',{get:()=>[...cookies].map(([k,v])=>k+'='+v).join('; '),set:v=>{const pair=v.split(';')[0], i=pair.indexOf('=');cookies.set(pair.slice(0,i),pair.slice(i+1))}});
  const context=vm.createContext({window:{addEventListener:(n,f)=>listeners[n]=f,setTimeout:(f,ms)=>timers.push({f,ms})},document,navigator:options.privacy||{},localStorage:storage(local),sessionStorage:storage(session),location:{origin,pathname:options.path||'/',search:options.search||'',assign:u=>assigned.push(u)},crypto:webcrypto,URL,URLSearchParams,Set,Date,Promise,console,fetch:async(url,config)=>{posts.push({url,config});return {ok:true,json:async()=>({pixelId:'1794863211794229',production:options.production!==false,serverEnabled:true})}}});
  vm.runInContext(browser,context);
- return {context,posts,scripts,cookies,timers,listeners,assigned,session};
+ return {context,posts,scripts,cookies,timers,listeners,assigned,session,shown:()=>shown};
 }
 test('one external Pixel, standard events once, same browser/server IDs, no Purchase or Lead',async()=>{
  const h=harness({choice:'accepted',search:'?fbclid=realClick123'});await flush();vm.runInContext(browser,h.context);await flush();
@@ -26,8 +26,8 @@ test('one external Pixel, standard events once, same browser/server IDs, no Purc
  for(const p of posts){const b=JSON.parse(p.config.body);const e=q.find(a=>a[0]==='track'&&a[1]===b.event_name);assert.equal(e[3].eventID,b.event_id);assert.equal(p.config.keepalive,true);assert.match(b.event_id,/^[a-f0-9-]{36}$/)}
  const view=q.find(a=>a[1]==='ViewContent');assert.equal(view[2].value,157.90);assert.equal(view[2].currency,'BRL');
 });
-test('unknown consent, refusal, DNT, GPC, preview and legal pages do not send events',async()=>{
- for(const o of [{},{choice:'denied'},{choice:'accepted',privacy:{doNotTrack:'1'}},{choice:'accepted',privacy:{globalPrivacyControl:true}},{choice:'accepted',production:false},{choice:'accepted',path:'/privacidade.html'}]){
+test('saved refusal, DNT, GPC, preview and legal pages do not send events',async()=>{
+ for(const o of [{choice:'denied'},{choice:'accepted',privacy:{doNotTrack:'1'}},{choice:'accepted',privacy:{globalPrivacyControl:true}},{choice:'accepted',production:false},{choice:'accepted',path:'/privacidade.html'}]){
  const h=harness(o);h.context.window.edaMeta.track('InitiateCheckout');await flush();assert.equal(h.scripts.length,0);assert.equal(h.posts.filter(p=>p.config?.method==='POST').length,0);
  }
 });
@@ -42,7 +42,7 @@ test('all CTA handoffs have 250ms bound, double click guard, later return allowe
  const h=harness({choice:'accepted'});await flush();const click=()=>{let prevented=false;const e={currentTarget:{href:'',id:'cta-checkout'},button:0,preventDefault:()=>prevented=true};h.context.window.edaCheckout.click(e);return {e,prevented}};
  assert.equal(click().prevented,true);assert.equal(click().prevented,true);await flush();assert.equal(h.timers.length,1);assert.equal(h.timers[0].ms,250);h.timers[0].f();assert.equal(h.assigned[0],'https://pay.kiwify.com.br/povy39E?afid=Z4HTVvAl');
  h.listeners.pageshow();click();await flush();const posts=h.posts.filter(p=>p.config?.method==='POST').map(p=>JSON.parse(p.config.body)).filter(p=>p.event_name==='InitiateCheckout');assert.equal(posts.length,2);assert.notEqual(posts[0].event_id,posts[1].event_id);
- const no=harness();no.context.window.edaCheckout.click({currentTarget:{id:'cta-checkout'},preventDefault(){},button:0});assert.equal(no.timers[0].ms,250);await flush();assert.equal(no.posts.length,0);
+ const no=harness({choice:'denied'});no.context.window.edaCheckout.click({currentTarget:{id:'cta-checkout'},preventDefault(){},button:0});assert.equal(no.timers[0].ms,250);await flush();assert.equal(no.posts.length,0);
 });
 test('revoking consent stops browser and CAPI; reaccepting does not repeat page events or load the base again',async()=>{
  const h=harness({choice:'accepted'});await flush();h.context.window.edaPrivacy.setChoice('denied');h.context.window.edaMeta.track('InitiateCheckout');await flush();assert.equal(h.posts.filter(p=>p.config?.method==='POST').length,2);
@@ -54,7 +54,7 @@ function response() {
 }
 function request(overrides = {}) {
   return { method: 'POST', headers: { origin, 'content-type': 'application/json', 'user-agent': 'test', 'x-vercel-forwarded-for': '192.0.2.1' },
-    body: { event_name: 'InitiateCheckout', event_id: webcrypto.randomUUID(), event_time: Math.floor(Date.now()/1000), consent: true,
+    body: { event_name: 'InitiateCheckout', event_id: webcrypto.randomUUID(), event_time: Math.floor(Date.now()/1000), measurement_allowed: true,
       event_source_url: origin+'/', fbp: 'fb.1.1700000000000.1234' }, ...overrides };
 }
 test('server validates payload, enforces production/privacy, protects token and coalesces duplicate IDs', async () => {
@@ -81,7 +81,7 @@ test('server validates payload, enforces production/privacy, protects token and 
       {headers:{origin:'https://attacker.example'}},
       {body:{...req.body,event_id:webcrypto.randomUUID(),event_name:'Purchase'}},
       {body:{...req.body,event_id:webcrypto.randomUUID(),event_source_url:'https://attacker.example/'}},
-      {body:{...req.body,event_id:webcrypto.randomUUID(),consent:false}}
+      {body:{...req.body,event_id:webcrypto.randomUUID(),measurement_allowed:false}}
     ]) { res=response();await handler(request(change),res); assert.ok(res.code>=400); }
     res=response();await handler(request({headers:{...req.headers,dnt:'1'}}),res); assert.equal(res.body.skipped,'privacy_preference');
     process.env.VERCEL_ENV='preview';res=response();await handler(request(),res);assert.equal(res.body.skipped,'preview');
@@ -89,4 +89,13 @@ test('server validates payload, enforces production/privacy, protects token and 
     res=response();await handler(request(),res);assert.equal(res.code,503);
     assert.equal(calls.length,1);
   } finally { global.fetch=savedFetch;process.env=savedEnv; }
+});
+
+test('automatic startup without a stored acceptance, no opening popup, one standard event per load',async()=>{
+ const h=harness();await flush();h.context.window.edaPrivacy.mount();assert.equal(h.shown(),0);
+ const posts=h.posts.filter(p=>p.config?.method==='POST');assert.equal(posts.length,2);
+ for(const p of posts){const body=JSON.parse(p.config.body);assert.equal(body.measurement_allowed,true);assert.equal(body.consent,undefined)}
+ const q=Array.from(h.context.window.fbq.queue,a=>[...a]);assert.equal(q.some(a=>a[0]==='consent'&&a[1]==='grant'),false);
+ h.context.window.edaPrivacy.open();assert.equal(h.shown(),1);
+ h.context.window.edaPrivacy.setChoice('denied');h.context.window.edaMeta.track('InitiateCheckout');await flush();assert.equal(h.posts.filter(p=>p.config?.method==='POST').length,2);
 });
