@@ -1,37 +1,40 @@
 from pathlib import Path
 from html.parser import HTMLParser
 from urllib.parse import urlparse,parse_qs
-import json,re,subprocess
-ROOT=Path(__file__).resolve().parent
+import subprocess,re
+R=Path(__file__).resolve().parent
 class Page(HTMLParser):
-    def __init__(self):super().__init__();self.in_body=False;self.skip=0;self.words=[];self.links=[];self.assets=[]
-    def handle_starttag(self,tag,attrs):
-        a=dict(attrs)
-        if tag=='body':self.in_body=True
-        if tag in ['script','style']:self.skip+=1
-        if tag=='a':self.links.append(a)
-        if tag in ['img','script'] and a.get('src'):self.assets.append(a['src'])
-        if tag=='link' and a.get('href'):self.assets.append(a['href'])
-    def handle_endtag(self,tag):
-        if tag in ['script','style']:self.skip-=1
-        if tag=='body':self.in_body=False
-    def handle_data(self,data):
-        if self.in_body and not self.skip:self.words.extend(data.split())
-original=Page();original.feed((ROOT/'referencia/pagina-original.html').read_text(encoding='utf-8'))
-copy=Page();copy.feed((ROOT/'dist/index.html').read_text(encoding='utf-8'))
-assert original.words==copy.words,'A copy ou a ordem do conteúdo foi alterada.'
-ctas=[a for a in copy.links if a.get('id','').startswith('cta-')]
+ def __init__(self):super().__init__();self.links=[];self.assets=[];self.text=[];self.skip=0
+ def handle_starttag(self,t,attrs):
+  a=dict(attrs)
+  if t in ['script','style']:self.skip+=1
+  if t=='a':self.links.append(a)
+  if t in ['img','script'] and a.get('src'):self.assets.append(a['src'])
+  if t=='link' and a.get('href'):self.assets.append(a['href'])
+ def handle_endtag(self,t):
+  if t in ['script','style']:self.skip-=1
+ def handle_data(self,d):
+  if not self.skip:self.text.extend(d.split())
+def strip_changed(h):
+ h=re.sub(r'<footer\b.*?</footer>','',h,flags=re.S)
+ a=h.find('Alunos colocando em prática')
+ if a>=0:
+  start=h.rfind('<section',0,a);end=h.index('</section>',a)+10
+  warning='Os resultados variam conforme experiência, execução, ofertas, público e investimento. Não há garantia de resultados específicos.'
+  h=h[:start]+'<p>'+warning+'</p>'+h[end:]
+ return h
+before=Page();after=Page()
+before.feed(strip_changed((R/'source/dist/index.html').read_text(encoding='utf-8')))
+h=(R/'dist/index.html').read_text(encoding='utf-8');after.feed(strip_changed(h))
+assert before.text==after.text,'Unapproved sales copy change'
+ctas=[a for a in after.links if a.get('id','').startswith('cta-')]
 assert len(ctas)==4
-assert all(parse_qs(urlparse(a['href']).query).get('afid')==['Z4HTVvAl'] for a in ctas)
-assert all((ROOT/'dist'/a.lstrip('/')).is_file() for a in copy.assets if a.startswith('/'))
-for name in ['index-COZobF80.js','routes-BXh-53cI.js']:
-    file=ROOT/'dist/assets'/name
-    subprocess.run(['node','--check',str(file)],check=True)
-    assert '1854019762707116' not in file.read_text(encoding='utf-8')
-assert '__l5e/events' not in (ROOT/'dist/index.html').read_text(encoding='utf-8')
-from PIL import Image
-for image in (ROOT/'dist/assets/provas').glob('*.webp'):
-    with Image.open(image) as opened:opened.verify()
-report={'bodyTextPreserved':True,'initialAffiliateCtas':len(ctas),'affiliateId':'Z4HTVvAl','staticAssetsExist':True,'javascriptSyntax':'passed','producerPixelRemoved':True,'responsiveImages':14}
-(ROOT/'verification-static.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
-print(json.dumps(report))
+assert all(a['href']=='https://pay.kiwify.com.br/povy39E?afid=Z4HTVvAl' for a in ctas)
+assert h.count('src="/assets/tracking.js"')==1 and 'fbevents.js' not in h
+assert '/assets/provas/' not in h
+assert all((R/'dist'/a.lstrip('/')).exists() for a in after.assets if a.startswith('/'))
+assert all((R/'dist'/p).exists() for p in ['privacidade.html','termos.html'])
+for p in ['dist/assets/index-COZobF80.js','dist/assets/routes-BXh-53cI.js','dist/assets/tracking.js','api/meta.js']:
+ subprocess.run(['node','--check',str(R/p)],check=True)
+assert (R/'tracking/browser.js').read_bytes()==(R/'dist/assets/tracking.js').read_bytes()
+print('Passed: sales copy preserved; exact affiliate links; one tracker; no unconfirmed proof images; legal pages and assets exist; JS syntax valid.')

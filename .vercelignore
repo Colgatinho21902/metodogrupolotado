@@ -8,3 +8,11 @@ __pycache__
 .env
 .env.*
 .vercel
+
+source/
+review-only/
+tracking/
+*.py
+README.md
+META.md
+VERCEL.md

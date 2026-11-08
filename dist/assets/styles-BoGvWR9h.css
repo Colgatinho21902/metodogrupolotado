@@ -3,3 +3,15 @@
 
 @media(max-width:639px){button.rounded-full{min-inline-size:44px;min-block-size:44px}a[id^="cta-"]{touch-action:manipulation}summary{touch-action:manipulation}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* Affiliate audit: tap targets, safe areas and non-overlapping privacy controls. */
+a[id^="cta-"]{min-height:48px;overflow-wrap:anywhere}
+.eda-footer{padding-inline:20px}.eda-footer>p{max-width:680px;margin:0 auto;line-height:1.7}
+.eda-footer nav{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 20px;margin-top:12px}
+.eda-footer a,.eda-footer button{display:inline-flex;align-items:center;justify-content:center;min-height:48px;text-decoration:underline}
+#eda-cookie-dialog{color:#f5f7ff;background:#101a2e;border:1px solid #566079;border-radius:16px;padding:24px;width:min(440px,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow:auto;margin:auto;box-shadow:0 16px 60px #0008}
+#eda-cookie-dialog::backdrop{background:#030817a8}#eda-cookie-dialog h2{font-size:20px;font-weight:700;margin-bottom:12px}
+#eda-cookie-dialog p{font-size:15px;line-height:1.6;margin-bottom:12px}#eda-cookie-dialog a{text-decoration:underline}
+.eda-cookie-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}.eda-cookie-actions button{min-height:48px;border:1px solid #718096;border-radius:8px;padding:10px;font-weight:700}
+.eda-cookie-actions button[data-choice="accepted"]{background:#087d3c;color:#fff}
+@media(max-width:359px){.eda-cookie-actions{grid-template-columns:1fr}}
