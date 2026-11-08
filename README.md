@@ -1,51 +1,29 @@
-# EDA Elite — cópia para afiliado
+# Revisão da landing page EDA — prévia para aprovação
 
-Cópia da página publicada em https://escoladeafiliados.online/, mantendo os textos, identidade, módulos, oferta, imagens, perguntas e funcionamento dos componentes.
+A versão em produção não foi alterada. Pixel 1794863211794229, checkout com afid=Z4HTVvAl, preço R$157,90 e garantia de 7 dias preservados.
 
-Link fornecido pelo usuário e configurado nos quatro CTAs iniciais e no botão fixo dinâmico:
+## Alterações
+- Uma única fonte externa do rastreador (`tracking/browser.js`, copiada para `dist/assets/tracking.js`), sem duas cópias inline do snippet.
+- Eventos padrão via track; PageView e ViewContent uma vez por carregamento, com início automático. InitiateCheckout por interação legítima, com guarda global de clique duplo e navegação em até 250ms.
+- API existente preservada, com eventID/event_id coincidente. Nenhum Purchase ou Lead na landing page. Configuração e token continuam exclusivamente na Vercel.
+- UTMs e fbclid recebidos são mantidos em sessionStorage, protegidos por try/catch e enviados em todos os CTAs. Sem valores inventados. Sem campanhas na sessão, o checkout permanece exatamente no link fixo.
+- Medição automática por padrão, sem aviso inicial de aceite; desativação e reativação disponíveis no rodapé. Recusas salvas permanecem respeitadas. DNT/GPC respeitados. As compras funcionam sem medição.
+- Vídeo permanece sob demanda, com a mesma capa convertida em WebP. Testado no navegador, com reprodução após o clique.
+- Estilos e fontes declarados no HTML para evitar requisições bloqueantes de CSS; os arquivos de hidratação não são mais preloaded sobre a capa. Fontes continuam locais. O botão funciona antes da hidratação via delegação.
+- Rodapé identifica a divulgação independente. Páginas de Privacidade e Termos adicionadas. Responsável e contato identificados na Política de Privacidade.
+- Sete provas sem autorização confirmada retiradas da exibição e de dist. Materiais guardados em review-only, excluído do deploy. Comentários CONFIRMAR ORIGEM e CONFIRMAR COM O PRODUTOR nos pontos apropriados.
+- Botões de 52px no mobile, sem overflow horizontal em 320/390/483px e desktop 1366px; botão fixo e preferência de movimento preservados.
 
-https://pay.kiwify.com.br/povy39E?afid=Z4HTVvAl
+## Validação
+`node --test tracking/tracking.test.cjs`: 7 testes passaram com transportes simulados, sem envio real à Meta. `python verify.py`: textos de venda preservados, checkout e assets verificados, sintaxe JavaScript válida.
 
-O teste de clique confirmou que o parâmetro `afid` é preservado quando o comportamento original acrescenta UTMs. Nenhuma compra foi feita e a comissão não foi validada por uma transação.
+Lighthouse mobile local com os dois exports servidos pelo mesmo servidor gzip, mesma máquina e configuração: performance 85 → 92, FCP 1,1s → 0,8s, LCP 4,3s → 3,0s, TBT 70ms → 180ms, CLS 0,02 → 0. São execuções pontuais e apresentam variação. A meta de LCP abaixo de 2,5s ainda não foi demonstrada; a confirmação final depende de medir a hospedagem da Vercel após aprovação. Não são medições em um celular físico.
 
-## Mobile
+Foi registrada separadamente a produção antes: performance 60, LCP 4,0s, TBT 1680ms, com alertas de timeout e CPU lenta. Esses resultados não foram usados como comparação controlada com localhost. Relatórios completos em evidence/.
 
-- Verificação no navegador em 320, 390 e 483 px, sem overflow horizontal, e em desktop 1366 px.
-- Botões de compra com 52 px de altura no celular.
-- Controles do carrossel com área mínima de 44 px no celular.
-- Mesmo vídeo original, carregado somente depois do toque.
-- Mesmas fontes, agora servidas localmente.
-- Mesmas imagens de depoimentos convertidas para WebP, com versões 480 e 960 px, sem alterar seus conteúdos.
-- As sete versões de 480 px totalizam 391.168 bytes; as imagens originais totalizavam 1.846.035 bytes. Redução de aproximadamente 79% nesse conjunto de imagens, não no peso total da página.
-- Movimento do carrossel respeita a preferência de redução de movimento.
+## Reproduzir
+A pasta source contém os inputs imutáveis da exportação anterior. `python build.py` aplica a migração com asserts, sem baixar a página do produtor. Requer Python com Pillow (o script usa a instalação local .tools/image-opt quando disponível). `dist/` contém os arquivos prontos; a Vercel permanece sem build e serve dist mais api/meta.js.
 
-## Medição
+A revisão está separada de main; não fazer merge antes de revisar a prévia. O comportamento real de recebimento/deduplicação na Meta deve ser conferido em Eventos de teste após publicação. Não foi feita compra e não há validação de comissão por transação.
 
-Pixel do afiliado **1794863211794229** configurado com PageView, ViewContent e InitiateCheckout, sem registrar cliques como compras. O envio pela API de Conversões depende de `META_ACCESS_TOKEN` no ambiente Production da Vercel. Veja [META.md](META.md) para configuração, privacidade, deduplicação e limitações. O Pixel do produtor permanece removido.
-
-Esta entrega não promete aprovação de anúncio, percentual de conversão, nota no PageSpeed nem resultado financeiro. Não foi executado Lighthouse ou teste em hardware físico nesta etapa. Os tamanhos de celular foram emulados no navegador e as evidências estão em `evidence/` no pacote.
-
-## Arquivos
-
-- `dist/`: frontend estático pronto para servir por HTTP/HTTPS. A medição pelo servidor usa a função Node `api/meta.js` na Vercel.
-- `config.json`: link do afiliado e parâmetros documentados.
-- `build.py`: captura e preparação reproduzível do frontend publicado.
-- `verify.py`: verifica preservação dos textos, links, recursos, sintaxe e imagens.
-- `asset-report.json`: tamanhos dos arquivos de imagem.
-- `evidence/`: capturas e relatório do teste no navegador, incluídos no ZIP de entrega.
-
-Para conferir localmente:
-
-```sh
-python -m http.server 5194 --directory dist
-```
-
-Abra http://localhost:5194/ . Abrir `index.html` por `file://` não executa os módulos corretamente.
-
-Para reconstruir, é necessário Python com Pillow, Node para a checagem opcional de sintaxe e acesso ao site original. O build usa o cache privado `referencia/` quando disponível. Se os nomes dos bundles da publicação original mudarem, o script interrompe para revisão em vez de produzir uma cópia parcial silenciosamente.
-
-## Uso no Lovable
-
-O ZIP contém uma captura estática funcional do frontend publicado, não o repositório original editável do produtor. Os módulos JavaScript distribuídos já estão compilados. Para integrar a outro projeto Lovable, use a pasta `dist/` como referência e disponibilize seus assets locais; não substitua APIs ou painéis existentes. O vínculo GitHub/Lovable e a publicação de um projeto Lovable são operações separadas desta cópia.
-
-No Sites, a entrega permanece privada para revisão. Tornar acessível para visitantes de anúncios exige alteração explícita do acesso ou hospedagem pública do pacote.
+A inicialização automática foi solicitada pelo responsável. O código não registra um aceite fictício nem certifica a adequação jurídica dessa escolha. Os relatórios Lighthouse anteriores à alteração de inicialização não medem o custo do Pixel automático.

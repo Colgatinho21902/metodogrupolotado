@@ -22,7 +22,7 @@ module.exports = async function handler(req, res) {
     body = typeof req.body === 'string' ? JSON.parse(raw) : req.body;
   } catch (_) { return res.status(400).json({ error: 'invalid_body' }); }
   const now = Math.floor(Date.now() / 1000);
-  if (!body || body.consent !== true || !EVENTS.has(body.event_name) ||
+  if (!body || (body.measurement_allowed !== true && body.consent !== true) || !EVENTS.has(body.event_name) ||
       !/^[A-Za-z0-9_-]{8,100}$/.test(body.event_id || '') ||
       !Number.isInteger(body.event_time) || body.event_time < now - 3600 || body.event_time > now + 60) {
     return res.status(400).json({ error: 'invalid_event' });
